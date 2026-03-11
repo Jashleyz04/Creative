@@ -5,21 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= html_escape($title) ?></title>
     <meta name="description" content="<?= html_escape($description) ?>">
-    <link
-      rel="stylesheet"
-      type="text/css"
-      href="css/styles.css?v=<?= (int)@filemtime(__DIR__ . '/../css/styles.css') ?>"
-    >
+    <link rel="stylesheet" type="text/css" href="css/styles.css">
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap">
-    <link rel="shortcut icon" type="image/png" href="img/favicon.ico">
+    <link rel="icon" type="image/x-icon" href="img/favicon.ico">
   </head>
   <body>
     <header>
       <div class="container">
         <a class="skip-link" href="#content">Skip to content</a>
         <div class="logo">
-          <a href="index.php"><img src="img/logo.png" alt="Creative Folk"></a>
+          <a href="index.php"><img src="img/logo.png" alt="Logo"></a>
         </div>
         <nav>
           <button id="toggle-navigation" aria-expanded="false">

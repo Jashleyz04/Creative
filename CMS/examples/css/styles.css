@@ -1,19 +1,28 @@
 @import url('https://fonts.googleapis.com/css?family=Lato');
 
 body {
-  background-color: #f7f7f7;
-  color: #575252;
+  margin: 0;
+  padding: 1em;
+  color: #e0d9ff;
   font-family: 'Lato', sans-serif;
-  margin: 0 auto;
-  padding: 1em;}
+  background:
+    radial-gradient(circle at 10% 20%, rgba(90, 60, 150, 0.45) 0, transparent 55%),
+    radial-gradient(circle at 80% 0%, rgba(10, 150, 200, 0.35) 0, transparent 55%),
+    radial-gradient(circle at 50% 100%, rgba(180, 120, 40, 0.35) 0, transparent 60%),
+    #050611;
+  background-attachment: fixed;
+}
 
 a {
   text-decoration: none;
-  color: #157E77;}
+  color: #f3d38a;
+}
 
 a:hover {
-  color: #157E77;
-  cursor: pointer;}
+  color: #ffeb9c;
+  cursor: pointer;
+  text-shadow: 0 0 6px rgba(255, 235, 156, 0.9);
+}
 
 
 .row {

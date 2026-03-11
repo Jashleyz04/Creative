@@ -1,80 +1,105 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);                                // Use strict types
+require 'includes/database-connection.php';               // Create PDO object
+require 'includes/functions.php';                         // Include functions
 
-require_once __DIR__ . '/includes/database-connection.php';
-require_once __DIR__ . '/includes/functions.php';
+$term  = filter_input(INPUT_GET, 'term');                 // Get search term
+$show  = filter_input(INPUT_GET, 'show', FILTER_VALIDATE_INT) ?? 3; // Limit
+$from  = filter_input(INPUT_GET, 'from', FILTER_VALIDATE_INT) ?? 0; // Offset
+$count = 0;                                               // Set count to 0
+$articles = [];                                           // Set articles to empty array
 
-$navigation = pdo($pdo, "SELECT id, name FROM category WHERE navigation = 1 ORDER BY name;")->fetchAll();
-$section = '';
-$title = 'Search';
-$description = 'Search articles';
+if ($term) {                                              // If search term provided
+    $arguments['term1'] = '%' . $term .'%';               // Store search term in array
+    $arguments['term2'] = '%' . $term .'%';               // three times as placeholders
+    $arguments['term3'] = '%' . $term .'%';               // cannot be repeated in SQL
 
-$q = trim((string)filter_input(INPUT_GET, 'q', FILTER_UNSAFE_RAW));
-$articles = [];
+    $sql = "SELECT COUNT(title) FROM article
+             WHERE title   LIKE :term1
+                OR summary LIKE :term2
+                OR content LIKE :term3
+               AND published = 1;";                       // How many articles match term
+    $count = pdo($pdo, $sql, $arguments)->fetchColumn();  // Return count
 
-if ($q !== '') {
-    $like = '%' . $q . '%';
-    $articles = pdo(
-        $pdo,
-        "SELECT a.id, a.title, a.summary, a.created, a.image_id,
-                c.id AS category_id, c.name AS category_name,
-                i.file AS image_file, i.alt AS image_alt
-         FROM article AS a
-         JOIN category AS c ON c.id = a.category_id
-         LEFT JOIN image AS i ON i.id = a.image_id
-         WHERE a.published = 1
-           AND (a.title LIKE :q OR a.summary LIKE :q OR a.content LIKE :q)
-         ORDER BY a.created DESC, a.id DESC
-         LIMIT 50",
-        ['q' => $like]
-    )->fetchAll();
+    if ($count > 0) {                                     // If articles match term
+        $arguments['show'] = $show;                       // Add to array for pagination
+        $arguments['from'] = $from;                       // Add to array for pagination
+        $sql = "SELECT a.id, a.title, a.summary, a.category_id, a.member_id, 
+                       c.name      AS category,
+                       CONCAT(m.forename, ' ', m.surname) AS author,
+                       i.file      AS image_file,
+                       i.alt       AS image_alt 
+                  FROM article     AS a
+                  JOIN category    AS c    ON a.category_id = c.id
+                  JOIN member      AS m    ON a.member_id   = m.id
+                  LEFT JOIN image  AS i    ON a.image_id    = i.id
+                 WHERE a.title   LIKE :term1
+                    OR a.summary LIKE :term2
+                    OR a.content LIKE :term3
+                   AND a.published = 1
+              ORDER BY a.id DESC
+                 LIMIT :show 
+                OFFSET :from;";                              // Find matching articles
+        $articles = pdo($pdo, $sql, $arguments)->fetchAll(); // Run query and get results
+    }
 }
+
+if ($count > $show) {                                     // If matches is more than show
+    $total_pages  = ceil($count / $show);                 // Calculate total pages
+    $current_page = ceil($from / $show) + 1;              // Calculate current page
+}
+
+$sql = "SELECT id, name FROM category WHERE navigation = 1;"; // SQL to get categories
+$navigation  = pdo($pdo, $sql)->fetchAll();               // Get navigation categories
+$section     = '';                                        // Current category
+$title       = 'Search results for ' . $term;             // HTML <title> content
+$description = $title . ' on Creative Folk';              // Meta description content
 ?>
-<?php require_once __DIR__ . '/includes/header.php'; ?>
+<?php include 'includes/header.php'; ?>
   <main class="container" id="content">
-    <h1>Search</h1>
-    <form method="get" action="search.php">
-      <label class="hidden" for="q">Search</label>
-      <input id="q" name="q" type="search" value="<?= html_escape($q) ?>" placeholder="Search articles...">
-      <button type="submit">Search</button>
-    </form>
+    <section class="header">
+      <form action="search.php" method="get" class="form-search">
+        <label for="search"><span>Search for: </span></label>
+        <input type="text" name="term" value="<?= html_escape($term) ?>" 
+               id="search" placeholder="Enter search term"  
+        /><input type="submit" value="Search" class="btn btn-search" />
+      </form>
+      <?php if ($term) { ?><p><b>Matches found:</b> <?= $count ?></p><?php } ?>
+    </section>
 
-    <?php if ($q === '') { ?>
-      <p>Enter a search term.</p>
-    <?php } elseif (!$articles) { ?>
-      <p>No results for <strong><?= html_escape($q) ?></strong>.</p>
-    <?php } else { ?>
-      <p>Results for <strong><?= html_escape($q) ?></strong>:</p>
+    <section class="grid">
       <?php foreach ($articles as $article) { ?>
-        <article>
-          <?php if (!empty($article['image_file'])) { ?>
-            <p>
-              <a href="article.php?id=<?= (int)$article['id'] ?>">
-                <img
-                  src="uploads/<?= html_escape($article['image_file']) ?>"
-                  alt="<?= html_escape($article['image_alt'] ?? '') ?>"
-                  loading="lazy"
-                  class="article-thumb"
-                >
-              </a>
-            </p>
-          <?php } ?>
-          <h2>
-            <a href="article.php?id=<?= (int)$article['id'] ?>">
-              <?= html_escape($article['title']) ?>
-            </a>
-          </h2>
-          <p>
-            <a href="category.php?id=<?= (int)$article['category_id'] ?>">
-              <?= html_escape($article['category_name']) ?>
-            </a>
-            <span class="hidden"> — </span>
-            <time datetime="<?= html_escape($article['created']) ?>"><?= html_escape(format_date($article['created'])) ?></time>
-          </p>
+      <article class="summary">
+        <a href="article.php?id=<?= $article['id'] ?>">
+          <img src="uploads/<?= html_escape($article['image_file'] ?? 'blank.png') ?>"
+               alt="<?= html_escape($article['image_alt']) ?>">
+          <h2><?= html_escape($article['title']) ?></h2>
           <p><?= html_escape($article['summary']) ?></p>
-        </article>
+        </a>
+        <p class="credit">
+          Posted in <a href="category.php?id=<?= $article['category_id'] ?>">
+          <?= html_escape($article['category']) ?></a>
+          by <a href="member.php?id=<?= $article['member_id'] ?>">
+          <?= html_escape($article['author']) ?></a>
+        </p>
+      </article>
       <?php } ?>
-    <?php } ?>
-  </main>
-<?php require_once __DIR__ . '/includes/footer.php'; ?>
+    </section>
 
+    <?php if ($count > $show) { ?>
+    <nav class="pagination" role="navigation" aria-label="Pagination Navigation">
+      <ul>
+      <?php for ($i = 1; $i <= $total_pages; $i++) { ?>
+        <li>
+          <a href="?term=<?= $term ?>&show=<?= $show ?>&from=<?= (($i - 1) * $show) ?>"
+            class="btn <?= ($i == $current_page) ? 'active" aria-current="true' : '' ?>">
+            <?= $i ?>
+          </a>
+        </li>
+      <?php } ?>
+      </ul>
+    </nav>
+    <?php } ?>
+
+  </main>
+<?php include 'includes/footer.php'; ?>

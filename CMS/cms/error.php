@@ -1,18 +1,18 @@
-<?php
-declare(strict_types=1);
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>An error occurred</title>
+    <link rel="stylesheet" type="text/css" href="css/styles.css" />
+</head>
+<body>
 
-http_response_code(500);
-require_once __DIR__ . '/includes/functions.php';
+    <h1 class="logo">Creative folk</h1>
 
-$navigation = [];
-$section = '';
-$title = 'Server error';
-$description = '';
-?>
-<?php require_once __DIR__ . '/includes/header.php'; ?>
-  <main class="container" id="content">
-    <h1>Sorry, a problem occurred</h1>
-    <p>Please try again later.</p>
-  </main>
-<?php require_once __DIR__ . '/includes/footer.php'; ?>
+    <h1>Sorry! An error occurred.</h1>
+    <p>The site owners have been notified and will fix the problem as soon as possible.</p>
+    <p><a href="index.php">Click here to go back to the home page</a>.</p>
+    <p>If the problem persists <a href="mailto:hello@eg.link">click here to email us</a>.</p>
 
+</body>
+</html>
